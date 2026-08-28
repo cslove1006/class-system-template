@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>班級管理系統</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <script>
+    const SUPABASE_URL = 'https://xkfcggsgvncljsbifbna.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhrZmNnZ3Nndm5jbGpzYmlmYm5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NTQ1MjAsImV4cCI6MjEwMzMzMDUyMH0.WFFwlEhaMRPQGbJBtMbXYZXNeBmnebINnK0w_5OXpyA';
+
+    var supabaseClient;
+    window.onload = function() {
+      if (SUPABASE_URL !== '你的_PROJECT_URL') {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      }
+    };
+  </script>
+
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background-color: #f0f2f5; margin: 0; padding: 30px 15px; }
+    .card { background: white; border-radius: 12px; padding: 25px; max-width: 650px; margin: 0 auto 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    h2, h3 { color: #1a1a1a; margin-top: 0; }
+    .role-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+    .tab-btn { flex: 1; padding: 10px; border: none; background: #f5f5f5; border-radius: 6px; cursor: pointer; font-weight: bold; color: #666; }
+    .tab-btn.active { background: #007bff; color: white; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-weight: 600; margin-bottom: 5px; }
+    input[type="text"], input[type="password"], input[type="date"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+    button.submit-btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    .error-msg { color: #dc3545; font-size: 14px; margin-top: 10px; text-align: center; font-weight: bold; }
+    .hidden { display: none; }
+    
+    .section-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+    .section-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; border-left: 4px solid #007bff; padding-left: 8px; }
+    
+    button.btn-class { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 15px; margin: 4px; font-weight: bold; }
+    button.btn-class-hw { background: #28a745; }
+    button.btn-class-submit { background: #fd7e14; }
+    button.btn-student { background: #6c757d; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 4px; }
+    button.btn-class:hover, button.btn-student:hover { opacity: 0.85; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #e0e0e0; padding: 8px 12px; text-align: center; }
+    th { background-color: #f8f9fa; }
+    .input-title { width: 100%; padding: 8px; margin-bottom: 15px; border: 2px solid #007bff; border-radius: 6px; font-size: 15px; box-sizing: border-box; }
+    .input-score { width: 80px; padding: 6px; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; }
+    .btn-back { background: #6c757d; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; float: right; }
+    
+    .status-missing { color: #dc3545; font-weight: bold; }
+    .status-done { color: #28a745; font-weight: bold; }
+    .btn-toggle-status { padding: 4px 10px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; background: white; font-weight: bold; }
+    .btn-toggle-status:hover { background: #e9ecef; }
+  </style>
+</head>
+<body>
+
+  <!-- 1. 登入頁面 -->
+  <div id="loginSection" class="card">
+    <h2>班級管理系統</h2>
+    <div class="role-tabs">
+      <button id="btnStudent" class="tab-btn active" onclick="switchRole('student')">學生登入</button>
+      <button id="btnAssistant" class="tab-btn" onclick="switchRole('assistant')">小老師登入</button>
+      <button id="btnTeacher" class="tab-btn" onclick="switchRole('teacher')">老師登入</button>
+    </div>
+
+    <form onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label id="accountLabel">學號</label>
+        <input type="text" id="accountInput" placeholder="請輸入學號" required>
+      </div>
+      <div class="form-group">
+        <label>密碼</label>
+        <input type="password" id="passwordInput" placeholder="請輸入密碼" required>
+      </div>
+      <button type="submit" class="submit-btn">登入系統</button>
+      <div id="errorMsg" class="error-msg"></div>
+    </form>
+  </div>
+
+  <!-- 2. 學生個人查詢頁面 -->
+  <div id="studentDashboardSection" class="card hidden">
+    <h3 id="studentWelcomeTitle">個人學習紀錄</h3>
+    <p id="studentInfoSub" style="color: #666; font-size: 15px; margin-bottom: 20px;"></p>
+
+    <div class="section-box" style="border-left: 4px solid #dc3545;">
+      <div class="section-title" style="border-left-color: #dc3545;">作業檢查與補檢狀態</div>
+      <div id="studentHwArea">載入中...</div>
+    </div>
+
+    <div class="section-box">
+      <div class="section-title">考試成績紀錄</div>
+      <div id="studentScoreArea">載入中...</div>
+    </div>
+
+    <button class="submit-btn" style="background:#dc3545; margin-top:10px;" onclick="logout()">登出</button>
+  </div>
+
+  <!-- 3. 老師功能主選單 -->
+  <div id="teacherDashboardSection" class="card hidden">
+    <h3>老師功能選單</h3>
+    
+    <div class="section-box">
+      <div class="section-title">成績登記</div>
+      <div id="scoreClassBtns">載入中...</div>
+    </div>
+
+    <div class="section-box">
+      <div class="section-title" style="border-left-color:#28a745;">作業未檢查登記</div>
+      <div id="hwClassBtns">載入中...</div>
+    </div>
+
+    <div class="section-box">
+      <div class="section-title" style="border-left-color:#fd7e14;">作業補檢處理 (依學生)</div>
+      <div id="submitHwClassBtns">載入中...</div>
+    </div>
+
+    <button class="submit-btn" style="background:#dc3545; margin-top:10px;" onclick="logout()">登出</button>
+  </div>
+
+  <!-- 4. 補檢處理：學生名單選單頁面 -->
+  <div id="studentSelectSection" class="card hidden">
+    <button class="btn-back" onclick="backToTeacherDashboard()">← 返回選單</button>
+    <h3 id="selectStudentClassTitle">選擇學生</h3>
+    <div id="studentBtnsContainer" style="margin-top:15px;">載入中...</div>
+  </div>
+
+  <!-- 5. 補檢處理：特定學生的作業清單頁面 -->
+  <div id="studentHwManageSection" class="card hidden">
+    <button class="btn-back" onclick="backToStudentSelect()">← 換其他學生</button>
+    <h3 id="targetStudentNameTitle">學生作業狀態管理</h3>
+    <div id="targetStudentHwTable">載入中...</div>
+  </div>
+
+  <!-- 6. 成績登記頁面 -->
+  <div id="scoreEntrySection" class="card hidden">
+    <button class="btn-back" onclick="backToTeacherDashboard()">← 返回選單</button>
+    <h3 id="scoreClassTitle">成績登記</h3>
+    <div class="form-group">
+      <label for="examTitle">考試名稱：</label>
+      <input type="text" id="examTitle" class="input-title" placeholder="例如：第一次國文小考 或 期中考">
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 80px;">座號</th>
+          <th style="width: 150px;">姓名</th>
+          <th>分數</th>
+        </tr>
+      </thead>
+      <tbody id="scoreStudentBody"></tbody>
+    </table>
+    <button class="submit-btn" style="margin-top:20px; background:#007bff;" onclick="submitScores()">確認送出成績</button>
+  </div>
+
+  <!-- 7. 作業未檢查登記頁面 (新增日期輸入框) -->
+  <div id="homeworkSection" class="card hidden">
+    <button id="btnBackTeacher" class="btn-back hidden" onclick="backToTeacherDashboard()">← 返回選單</button>
+    <h3 id="hwClassTitle">作業未檢查登記</h3>
+    
+    <div class="form-group">
+      <label for="hwDate">作業日期：</label>
+      <input type="date" id="hwDate" style="border-color:#28a745; margin-bottom: 10px;">
+    </div>
+
+    <div class="form-group">
+      <label for="hwTitle">作業內容：</label>
+      <input type="text" id="hwTitle" class="input-title" style="border-color:#28a745;" placeholder="例如：國文習作 P.10 ~ P.12">
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 50px;"><input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)"></th>
+          <th style="width: 80px;">座號</th>
+          <th>姓名</th>
+        </tr>
+      </thead>
+      <tbody id="hwStudentBody"></tbody>
+    </table>
+    <button class="submit-btn" style="margin-top:20px; background:#28a745;" onclick="submitMissingHomework()">確認送出未檢查名單</button>
+    <button id="btnLogoutAssistant" class="submit-btn hidden" style="background:#dc3545; margin-top:10px;" onclick="logout()">登出</button>
+  </div>
+
+  <script>
+    let currentRole = 'student';
+    let currentUser = null;
+    let targetClass = '';
+    let currentStudentObj = null;
+
+    function switchRole(role) {
+      currentRole = role;
+      document.getElementById('btnStudent').classList.remove('active');
+      document.getElementById('btnAssistant').classList.remove('active');
+      document.getElementById('btnTeacher').classList.remove('active');
+      document.getElementById('errorMsg').innerText = '';
+      
+      const accountLabel = document.getElementById('accountLabel');
+      const accountInput = document.getElementById('accountInput');
+
+      if (role === 'student') {
+        document.getElementById('btnStudent').classList.add('active');
+        accountLabel.innerText = '學號';
+        accountInput.placeholder = '請輸入學號';
+      } else if (role === 'assistant') {
+        document.getElementById('btnAssistant').classList.add('active');
+        accountLabel.innerText = '小老師帳號';
+        accountInput.placeholder = '請輸入小老師帳號';
+      } else if (role === 'teacher') {
+        document.getElementById('btnTeacher').classList.add('active');
+        accountLabel.innerText = '老師帳號';
+        accountInput.placeholder = '請輸入老師帳號';
+      }
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const account = document.getElementById('accountInput').value.trim();
+      const password = document.getElementById('passwordInput').value.trim();
+      const errorMsg = document.getElementById('errorMsg');
+      errorMsg.style.color = '#007bff';
+      errorMsg.innerText = '驗證中...';
+
+      if (currentRole === 'student') {
+        const { data, error } = await supabaseClient
+          .from('students')
+          .select('*')
+          .eq('student_id', account)
+          .eq('password', password)
+          .maybeSingle();
+
+        if (error || !data) {
+          errorMsg.style.color = '#dc3545';
+          errorMsg.innerText = '學號或密碼錯誤！';
+        } else {
+          currentUser = data;
+          document.getElementById('loginSection').classList.add('hidden');
+          loadStudentDashboard(data);
+        }
+      } else {
+        const { data, error } = await supabaseClient
+          .from('teachers')
+          .select('*')
+          .eq('username', account)
+          .eq('password', password)
+          .eq('role', currentRole)
+          .maybeSingle();
+
+        if (error || !data) {
+          errorMsg.style.color = '#dc3545';
+          errorMsg.innerText = '帳號或密碼錯誤！';
+        } else {
+          currentUser = data;
+          document.getElementById('loginSection').classList.add('hidden');
+
+          if (currentUser.role === 'teacher') {
+            initTeacherDashboard();
+          } else {
+            targetClass = currentUser.class_name;
+            document.getElementById('btnLogoutAssistant').classList.remove('hidden');
+            loadHwStudentList(targetClass);
+          }
+        }
+      }
+    }
+
+    // 學生個人查詢 (包含日期顯示 & 移除成績及格狀態)
+    async function loadStudentDashboard(student) {
+      document.getElementById('studentDashboardSection').classList.remove('hidden');
+      document.getElementById('studentWelcomeTitle').innerText = `你好，${student.name} 同學！`;
+      document.getElementById('studentInfoSub').innerText = `班級：${student.class_name} 班 | 座號：${student.seat_num} 號 | 學號：${student.student_id}`;
+
+      // 1. 作業未檢查/補檢紀錄 (新增日期欄位)
+      const hwArea = document.getElementById('studentHwArea');
+      const { data: hwData, error: hwError } = await supabaseClient
+        .from('missing_homework')
+        .select('*')
+        .eq('student_id', student.student_id)
+        .order('homework_date', { ascending: false });
+
+      if (hwError) {
+        hwArea.innerHTML = '<div style="color:#888;">載入作業紀錄失敗</div>';
+      } else if (hwData.length === 0) {
+        hwArea.innerHTML = '<div style="color:#28a745; font-weight:bold;">🎉 太棒了！沒有任何未檢查紀錄！</div>';
+      } else {
+        let html = '<table><thead><tr><th>日期</th><th>作業內容</th><th>當前狀態</th></tr></thead><tbody>';
+        hwData.forEach(item => {
+          const isDone = item.status === '已補檢';
+          const statusClass = isDone ? 'status-done' : 'status-missing';
+          const statusText = item.status ? item.status : '未檢查';
+          const dateText = item.homework_date ? item.homework_date : '-';
+          html += `
+            <tr>
+              <td>${dateText}</td>
+              <td>${item.homework_title}</td>
+              <td class="${statusClass}">${statusText}</td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table>';
+        hwArea.innerHTML = html;
+      }
+
+      // 2. 成績紀錄 (僅保留分數，移除及格/不及格欄位)
+      const scoreArea = document.getElementById('studentScoreArea');
+      const { data: scoreData, error: scoreError } = await supabaseClient
+        .from('scores')
+        .select('*')
+        .eq('student_id', student.student_id);
+
+      if (scoreError) {
+        scoreArea.innerHTML = '<div style="color:#888;">載入成績紀錄失敗</div>';
+      } else if (scoreData.length === 0) {
+        scoreArea.innerHTML = '<div style="color:#888;">尚無任何考試成績紀錄。</div>';
+      } else {
+        let html = '<table><thead><tr><th>考試項目</th><th>分數</th></tr></thead><tbody>';
+        scoreData.forEach(item => {
+          html += `
+            <tr>
+              <td>${item.exam_title}</td>
+              <td style="font-weight:bold; color:#007bff;">${item.score} 分</td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table>';
+        scoreArea.innerHTML = html;
+      }
+    }
+
+    // 初始化老師主選單
+    async function initTeacherDashboard() {
+      document.getElementById('teacherDashboardSection').classList.remove('hidden');
+      const { data, error } = await supabaseClient.from('students').select('class_name');
+      if (error) { alert('載入班級失敗：' + error.message); return; }
+
+      const classes = [...new Set(data.map(item => item.class_name))];
+      const scoreContainer = document.getElementById('scoreClassBtns');
+      const hwContainer = document.getElementById('hwClassBtns');
+      const submitHwContainer = document.getElementById('submitHwClassBtns');
+      
+      scoreContainer.innerHTML = '';
+      hwContainer.innerHTML = '';
+      submitHwContainer.innerHTML = '';
+
+      classes.forEach(cls => {
+        const btnScore = document.createElement('button');
+        btnScore.className = 'btn-class';
+        btnScore.innerText = `${cls} 班`;
+        btnScore.onclick = () => openScoreEntry(cls);
+        scoreContainer.appendChild(btnScore);
+
+        const btnHw = document.createElement('button');
+        btnHw.className = 'btn-class btn-class-hw';
+        btnHw.innerText = `${cls} 班`;
+        btnHw.onclick = () => {
+          targetClass = cls;
+          document.getElementById('teacherDashboardSection').classList.add('hidden');
+          document.getElementById('btnBackTeacher').classList.remove('hidden');
+          loadHwStudentList(cls);
+        };
+        hwContainer.appendChild(btnHw);
+
+        const btnSubmitHw = document.createElement('button');
+        btnSubmitHw.className = 'btn-class btn-class-submit';
+        btnSubmitHw.innerText = `${cls} 班`;
+        btnSubmitHw.onclick = () => openStudentSelect(cls);
+        submitHwContainer.appendChild(btnSubmitHw);
+      });
+    }
+
+    // 選擇學生
+    async function openStudentSelect(className) {
+      targetClass = className;
+      document.getElementById('teacherDashboardSection').classList.add('hidden');
+      document.getElementById('studentSelectSection').classList.remove('hidden');
+      document.getElementById('selectStudentClassTitle').innerText = `【${className} 班】選擇學生`;
+
+      const container = document.getElementById('studentBtnsContainer');
+      container.innerHTML = '載入學生中...';
+
+      const { data: students, error } = await supabaseClient
+        .from('students')
+        .select('*')
+        .eq('class_name', className)
+        .order('seat_num', { ascending: true });
+
+      if (error) { alert('載入學生失敗：' + error.message); return; }
+
+      container.innerHTML = '';
+      students.forEach(s => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-student';
+        btn.innerText = `${s.seat_num}號 ${s.name}`;
+        btn.onclick = () => openStudentHwManage(s);
+        container.appendChild(btn);
+      });
+    }
+
+    // 開啟學生作業管理頁面
+    async function openStudentHwManage(student) {
+      currentStudentObj = student;
+      document.getElementById('studentSelectSection').classList.add('hidden');
+      document.getElementById('studentHwManageSection').classList.remove('hidden');
+      document.getElementById('targetStudentNameTitle').innerText = `【${student.class_name}班 ${student.seat_num}號 ${student.name}】作業狀態`;
+
+      loadStudentHwTable(student.student_id);
+    }
+
+    // 載入特定學生的作業清單 (呈現日期與名稱)
+    async function loadStudentHwTable(studentId) {
+      const container = document.getElementById('targetStudentHwTable');
+      container.innerHTML = '載入作業紀錄中...';
+
+      const { data: hwList, error } = await supabaseClient
+        .from('missing_homework')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('homework_date', { ascending: false });
+
+      if (error) { alert('載入紀錄失敗：' + error.message); return; }
+
+      if (hwList.length === 0) {
+        container.innerHTML = '<p style="color:#28a745; font-weight:bold;">此學生目前沒有任何未檢查紀錄！</p>';
+        return;
+      }
+
+      let html = '<table><thead><tr><th>日期</th><th>作業內容</th><th>目前狀態</th><th>切換狀態</th></tr></thead><tbody>';
+      hwList.forEach(item => {
+        const isDone = item.status === '已補檢';
+        const statusClass = isDone ? 'status-done' : 'status-missing';
+        const statusText = item.status ? item.status : '未檢查';
+        const nextStatus = isDone ? '未檢查' : '已補檢';
+        const dateText = item.homework_date ? item.homework_date : '-';
+
+        html += `
+          <tr>
+            <td>${dateText}</td>
+            <td>${item.homework_title}</td>
+            <td class="${statusClass}">${statusText}</td>
+            <td>
+              <button class="btn-toggle-status" onclick="toggleHwStatus(${item.id}, '${nextStatus}')">
+                標示為「${nextStatus}」
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    // 切換狀態
+    async function toggleHwStatus(rowId, newStatus) {
+      const { error } = await supabaseClient
+        .from('missing_homework')
+        .update({ status: newStatus })
+        .eq('id', rowId);
+
+      if (error) {
+        alert('更新狀態失敗：' + error.message);
+      } else {
+        loadStudentHwTable(currentStudentObj.student_id);
+      }
+    }
+
+    // 返回功能
+    function backToStudentSelect() {
+      document.getElementById('studentHwManageSection').classList.add('hidden');
+      document.getElementById('studentSelectSection').classList.remove('hidden');
+    }
+
+    function backToTeacherDashboard() {
+      document.getElementById('scoreEntrySection').classList.add('hidden');
+      document.getElementById('homeworkSection').classList.add('hidden');
+      document.getElementById('studentSelectSection').classList.add('hidden');
+      document.getElementById('studentHwManageSection').classList.add('hidden');
+      document.getElementById('teacherDashboardSection').classList.remove('hidden');
+    }
+
+    // 登記未檢查 (包含日期與作業內容)
+    async function submitMissingHomework() {
+      const hwDate = document.getElementById('hwDate').value;
+      const hwTitle = document.getElementById('hwTitle').value.trim();
+
+      if (!hwDate) { alert('請選擇「作業日期」！'); return; }
+      if (!hwTitle) { alert('請輸入「作業內容」！'); return; }
+
+      const selectedBoxes = document.querySelectorAll('.student-checkbox:checked');
+      if (selectedBoxes.length === 0) { alert('請至少勾選一名未檢查學生！'); return; }
+
+      const rowsToInsert = Array.from(selectedBoxes).map(cb => ({
+        student_id: cb.value,
+        homework_date: hwDate,
+        homework_title: hwTitle,
+        status: '未檢查'
+      }));
+
+      const { data, error } = await supabaseClient.from('missing_homework').insert(rowsToInsert);
+      if (error) {
+        alert('登記失敗：' + error.message);
+      } else {
+        alert(`成功登記！已新增 ${rowsToInsert.length} 筆未檢查紀錄。`);
+        document.getElementById('hwTitle').value = '';
+        document.getElementById('selectAll').checked = false;
+        document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = false);
+      }
+    }
+
+    // 載入未檢查登記頁面 (預設填入當天日期)
+    async function loadHwStudentList(className) {
+      document.getElementById('homeworkSection').classList.remove('hidden');
+      document.getElementById('hwClassTitle').innerText = `【${className} 班】作業未檢查登記`;
+      
+      // 自動填入今日日期
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('hwDate').value = today;
+
+      const tbody = document.getElementById('hwStudentBody');
+      tbody.innerHTML = '<tr><td colspan="3">載入學生名單中...</td></tr>';
+
+      const { data: students, error } = await supabaseClient
+        .from('students')
+        .select('*')
+        .eq('class_name', className)
+        .order('seat_num', { ascending: true });
+
+      if (error) { alert('載入學生名單失敗：' + error.message); return; }
+
+      tbody.innerHTML = '';
+      students.forEach(s => {
+        tbody.innerHTML += `
+          <tr>
+            <td><input type="checkbox" class="student-checkbox" value="${s.student_id}"></td>
+            <td>${s.seat_num}</td>
+            <td>${s.name}</td>
+          </tr>
+        `;
+      });
+    }
+
+    // 成績登記相關
+    async function openScoreEntry(className) {
+      targetClass = className;
+      document.getElementById('teacherDashboardSection').classList.add('hidden');
+      document.getElementById('scoreEntrySection').classList.remove('hidden');
+      document.getElementById('scoreClassTitle').innerText = `【${className} 班】成績登記`;
+      document.getElementById('examTitle').value = '';
+
+      const tbody = document.getElementById('scoreStudentBody');
+      tbody.innerHTML = '<tr><td colspan="3">載入學生名單中...</td></tr>';
+
+      const { data: students, error } = await supabaseClient
+        .from('students')
+        .select('*')
+        .eq('class_name', className)
+        .order('seat_num', { ascending: true });
+
+      if (error) { alert('載入名單失敗：' + error.message); return; }
+
+      tbody.innerHTML = '';
+      students.forEach(s => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${s.seat_num}</td>
+            <td>${s.name}</td>
+            <td><input type="number" class="input-score score-field" data-id="${s.student_id}" placeholder="分數" min="0" max="100"></td>
+          </tr>
+        `;
+      });
+    }
+
+    async function submitScores() {
+      const examTitle = document.getElementById('examTitle').value.trim();
+      if (!examTitle) { alert('請先輸入「考試名稱」！'); return; }
+
+      const scoreFields = document.querySelectorAll('.score-field');
+      const rowsToInsert = [];
+
+      scoreFields.forEach(input => {
+        const val = input.value.trim();
+        if (val !== '') {
+          rowsToInsert.push({
+            student_id: input.dataset.id,
+            exam_title: examTitle,
+            score: parseFloat(val)
+          });
+        }
+      });
+
+      if (rowsToInsert.length === 0) { alert('請至少輸入一位學生的分數！'); return; }
+
+      const { data, error } = await supabaseClient.from('scores').insert(rowsToInsert);
+      if (error) {
+        alert('成績寫入失敗：' + error.message);
+      } else {
+        alert(`成功登錄成績！共新增 ${rowsToInsert.length} 筆紀錄。`);
+        document.getElementById('examTitle').value = '';
+        scoreFields.forEach(input => input.value = '');
+      }
+    }
+
+    function toggleSelectAll(master) {
+      document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = master.checked);
+    }
+
+    function logout() {
+      document.getElementById('studentDashboardSection').classList.add('hidden');
+      document.getElementById('scoreEntrySection').classList.add('hidden');
+      document.getElementById('homeworkSection').classList.add('hidden');
+      document.getElementById('studentSelectSection').classList.add('hidden');
+      document.getElementById('studentHwManageSection').classList.add('hidden');
+      document.getElementById('teacherDashboardSection').classList.add('hidden');
+      document.getElementById('loginSection').classList.remove('hidden');
+      document.getElementById('accountInput').value = '';
+      document.getElementById('passwordInput').value = '';
+      document.getElementById('errorMsg').innerText = '';
+      currentUser = null;
+    }
+  </script>
+</body>
+</html>
