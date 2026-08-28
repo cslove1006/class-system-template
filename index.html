@@ -657,6 +657,9 @@
       scoreFields.forEach(input => {
         const val = input.value.trim();
         if (val !== '') {
+          const scoreNum = parseFloat(val);
+          currentScores.push(scoreNum); // 👈 補上這行，把分數放進 currentScores 陣列！
+          
           rowsToInsert.push({
             student_id: input.dataset.id,
             exam_title: examTitle,
