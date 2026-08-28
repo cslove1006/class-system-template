@@ -140,6 +140,34 @@
       <label for="examTitle">考試名稱：</label>
       <input type="text" id="examTitle" class="input-title" placeholder="例如：第一次國文小考 或 期中考">
     </div>
+
+    <!-- 加入統計1/3 -->
+    <!-- 📍【第一步開始】：在成績登記頁面（scoreEntrySection）的考試名稱下方，加入顯示平均與 9 個級距人數的 HTML 區塊 -->
+    <div id="scoreStatsArea" class="section-box" style="background: #ffffff; border: 1px solid #17a2b8; margin-bottom: 20px;">
+      <div class="section-title" style="border-left-color: #17a2b8;">📊 班級成績統計與級距</div>
+      <p style="font-size: 16px; margin: 10px 0;"><strong>目前已登記平均：</strong> <span id="statAverage" style="color: #007bff; font-size: 18px; font-weight: bold;">--</span> 分</p>
+      <table>
+        <thead>
+          <tr>
+            <th>分數級距</th>
+            <th>人數</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>100 分</td><td id="count-100">0 人</td></tr>
+          <tr><td>90 以上未滿 100</td><td id="count-90">0 人</td></tr>
+          <tr><td>80 以上未滿 90</td><td id="count-80">0 人</td></tr>
+          <tr><td>70 以上未滿 80</td><td id="count-70">0 人</td></tr>
+          <tr><td>60 以上未滿 70</td><td id="count-60">0 人</td></tr>
+          <tr><td>50 以上未滿 60</td><td id="count-50">0 人</td></tr>
+          <tr><td>40 以上未滿 50</td><td id="count-40">0 人</td></tr>
+          <tr><td>30 以上未滿 40</td><td id="count-30">0 人</td></tr>
+          <tr><td>未滿 30 分</td><td id="count-under30">0 人</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- 📍【第一步結束】 -->
+    
     <table>
       <thead>
         <tr>
@@ -187,6 +215,51 @@
     let currentUser = null;
     let targetClass = '';
     let currentStudentObj = null;
+
+    //加入統計2/3
+    // 📍【第二步開始】：定義計算成績平均與 9 個級距人數的 JS 核心處理邏輯
+    function calculateScoreStats(scoresArray) {
+      if (!scoresArray || scoresArray.length === 0) {
+        document.getElementById('statAverage').innerText = '--';
+        ['count-100', 'count-90', 'count-80', 'count-70', 'count-60', 'count-50', 'count-40', 'count-30', 'count-under30'].forEach(id => {
+          document.getElementById(id).innerText = '0 人';
+        });
+        return;
+      }
+
+      // 1. 計算平均 (取至小數點第 1 位)
+      const sum = scoresArray.reduce((acc, val) => acc + val, 0);
+      const avg = (sum / scoresArray.length).toFixed(1);
+      document.getElementById('statAverage').innerText = avg;
+
+      // 2. 初始化 9 個級距計數器
+      let c100 = 0, c90 = 0, c80 = 0, c70 = 0, c60 = 0, c50 = 0, c40 = 0, c30 = 0, cUnder30 = 0;
+
+      // 3. 依分數歸類級距
+      scoresArray.forEach(score => {
+        if (score === 100) c100++;
+        else if (score >= 90 && score < 100) c90++;
+        else if (score >= 80 && score < 90) c80++;
+        else if (score >= 70 && score < 80) c70++;
+        else if (score >= 60 && score < 70) c60++;
+        else if (score >= 50 && score < 60) c50++;
+        else if (score >= 40 && score < 50) c40++;
+        else if (score >= 30 && score < 40) c30++;
+        else if (score < 30) cUnder30++;
+      });
+
+      // 4. 更新畫面 DOM 文字
+      document.getElementById('count-100').innerText = c100 + ' 人';
+      document.getElementById('count-90').innerText = c90 + ' 人';
+      document.getElementById('count-80').innerText = c80 + ' 人';
+      document.getElementById('count-70').innerText = c70 + ' 人';
+      document.getElementById('count-60').innerText = c60 + ' 人';
+      document.getElementById('count-50').innerText = c50 + ' 人';
+      document.getElementById('count-40').innerText = c40 + ' 人';
+      document.getElementById('count-30').innerText = c30 + ' 人';
+      document.getElementById('count-under30').innerText = cUnder30 + ' 人';
+    }
+    // 📍【第二步結束】  
 
     function switchRole(role) {
       currentRole = role;
@@ -546,6 +619,10 @@
       document.getElementById('scoreClassTitle').innerText = `【${className} 班】成績登記`;
       document.getElementById('examTitle').value = '';
 
+      //加入統計3(A)/3
+      // 📍【第三步（位置 A）】：開啟成績登記頁面時，將統計面板重置歸零
+      calculateScoreStats([]);      
+
       const tbody = document.getElementById('scoreStudentBody');
       tbody.innerHTML = '<tr><td colspan="3">載入學生名單中...</td></tr>';
 
@@ -575,6 +652,7 @@
 
       const scoreFields = document.querySelectorAll('.score-field');
       const rowsToInsert = [];
+      const currentScores = []; // 用來計算統計的分數陣列 (這個是我自己發現要加入的)
 
       scoreFields.forEach(input => {
         const val = input.value.trim();
@@ -593,6 +671,10 @@
       if (error) {
         alert('成績寫入失敗：' + error.message);
       } else {
+        //加入統計3(B)/3
+        // 📍【第三步（位置 B）】：按下確認送出成績且寫入成功後，即時觸發計算並更新畫面上的統計區塊
+        calculateScoreStats(currentScores);
+        
         alert(`成功登錄成績！共新增 ${rowsToInsert.length} 筆紀錄。`);
         document.getElementById('examTitle').value = '';
         scoreFields.forEach(input => input.value = '');
