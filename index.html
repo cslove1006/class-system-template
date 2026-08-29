@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <title>班級管理系統</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  /* 加入導出 excel 檔案 */
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  /* 加入結束 */
   
   <script>
     const SUPABASE_URL = 'https://xkfcggsgvncljsbifbna.supabase.co';
@@ -196,6 +200,12 @@
   <div id="teacherDashboardSection" class="card hidden">
     <h3>老師功能選單</h3>
 
+    <!-- ➕ 新增：導出成績 excel 區塊 -->
+    <button class="submit-btn" style="background:#28a745; margin-bottom:15px;" onclick="exportAllClassesToExcel()">
+      📊 匯出全校/全班成績 Excel 檔
+    </button>
+    <!-- ➕ 新增結束 -->
+
     <!-- ➕ 新增：檢視班級成績區塊 -->
     <div class="section-box">
       <div class="section-title" style="border-left-color:#17a2b8;">檢視班級成績</div>
@@ -343,6 +353,79 @@
       document.getElementById('scoreEntrySection').classList.add('hidden');
       document.getElementById('homeworkSection').classList.add('hidden');
     }
+
+    //加入導出成績 excel 檔
+    async function exportAllClassesToExcel() {
+      alert('正在準備匯出資料，請稍候...');
+
+      // 1. 從 Supabase 撈取學生與成績資料
+      const { data: students, error: sErr } = await supabaseClient
+        .from('students')
+        .select('*')
+        .order('seat_num', { ascending: true });
+
+      const { data: scores, error: scErr } = await supabaseClient
+        .from('scores')
+        .select('*');
+
+      if (sErr || scErr) {
+        alert('讀取資料失敗：' + (sErr?.message || scErr?.message));
+        return;
+      }
+
+      // 2. 建立 Excel 工作簿 (Workbook)
+      const wb = XLSX.utils.book_new();
+
+      // 3. 按班級將學生分類
+      const classMap = {};
+      students.forEach(s => {
+        if (!classMap[s.class_name]) classMap[s.class_name] = [];
+        classMap[s.class_name].push(s);
+      });
+
+      // 4. 針對每個班級製作獨立的工作表 (Sheet)
+      Object.keys(classMap).forEach(className => {
+        const classStudents = classMap[className];
+        const studentIds = classStudents.map(s => s.student_id);
+        const classScores = scores.filter(sc => studentIds.includes(sc.student_id));
+
+        // 取得該班所有的考試項目清單
+        const examTitles = [...new Set(classScores.map(sc => sc.exam_title))];
+
+        // 建立表頭
+        const sheetData = [];
+        const header = ['座號', '姓名', ...examTitles];
+        sheetData.push(header);
+
+        // 整理成績對照表
+        const scoreMap = {};
+        classScores.forEach(sc => {
+          if (!scoreMap[sc.student_id]) scoreMap[sc.student_id] = {};
+          scoreMap[sc.student_id][sc.exam_title] = sc.score;
+        });
+
+        // 填寫每個學生的資料列
+        classStudents.forEach(s => {
+          const row = [s.seat_num, s.name];
+          examTitles.forEach(title => {
+            const val = (scoreMap[s.student_id] && scoreMap[s.student_id][title] !== undefined)
+              ? scoreMap[s.student_id][title]
+              : '';
+            row.push(val);
+          });
+          sheetData.push(row);
+        });
+
+        // 將陣列轉為 Sheet，並加入到 Workbook 中
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+        XLSX.utils.book_append_sheet(wb, ws, `${className}班`);
+      });
+
+      // 5. 下載 Excel 檔案
+      const fileName = `班級成績總覽_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+    }
+    //加入導出成績 excel 檔 結束
 
     //加入統計2/3
     // 📍【第二步開始】：定義計算成績平均與 9 個級距人數的 JS 核心處理邏輯
