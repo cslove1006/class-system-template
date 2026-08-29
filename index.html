@@ -20,6 +20,11 @@
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; background-color: #f0f2f5; margin: 0; padding: 30px 15px; }
     .card { background: white; border-radius: 12px; padding: 25px; max-width: 650px; margin: 0 auto 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    
+    /* ➕ 新增：檢視成績頁面需要較寬的容器 */
+    .card-wide { max-width: 95% !important; width: 1000px; }
+    /* ➕ 新增結束 */
+    
     h2, h3 { color: #1a1a1a; margin-top: 0; }
     .role-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
     .tab-btn { flex: 1; padding: 10px; border: none; background: #f5f5f5; border-radius: 6px; cursor: pointer; font-weight: bold; color: #666; }
@@ -37,6 +42,11 @@
     button.btn-class { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 15px; margin: 4px; font-weight: bold; }
     button.btn-class-hw { background: #28a745; }
     button.btn-class-submit { background: #fd7e14; }
+
+    /* ➕ 新增：檢視成績按鈕樣式 */
+    button.btn-class-view { background: #17a2b8; }
+    /* ➕ 新增結束 */
+    
     button.btn-student { background: #6c757d; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 4px; }
     button.btn-class:hover, button.btn-student:hover { opacity: 0.85; }
     
@@ -51,6 +61,52 @@
     .status-done { color: #28a745; font-weight: bold; }
     .btn-toggle-status { padding: 4px 10px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; background: white; font-weight: bold; }
     .btn-toggle-status:hover { background: #e9ecef; }
+
+    /* ➕ 新增：凍結窗格（左側固定、右側滑動）表格樣式 */
+    .freeze-table-container {
+      overflow-x: auto;
+      max-width: 100%;
+      border: 1px solid #e0e0e0;
+      position: relative;
+    }
+    .freeze-table {
+      border-collapse: separate;
+      border-spacing: 0;
+      white-space: nowrap;
+      width: max-content;
+      min-width: 100%;
+    }
+    .freeze-table th, .freeze-table td {
+      border-right: 1px solid #e0e0e0;
+      border-bottom: 1px solid #e0e0e0;
+      background-color: #fff;
+    }
+    .freeze-table th { background-color: #f8f9fa; }
+    /* 固定座號（第一欄） */
+    .sticky-col-1 {
+      position: sticky;
+      left: 0;
+      z-index: 10;
+      min-width: 60px;
+      background-color: #fff !important;
+    }
+    /* 固定姓名（第二欄） */
+    .sticky-col-2 {
+      position: sticky;
+      left: 60px;
+      z-index: 10;
+      min-width: 100px;
+      border-right: 2px solid #007bff !important;
+      background-color: #fff !important;
+    }
+    th.sticky-col-1, th.sticky-col-2 {
+      z-index: 20;
+      background-color: #f8f9fa !important;
+    }
+    .stat-row-avg { background-color: #e8f4f8 !important; font-weight: bold; color: #007bff; }
+    .stat-row-grade { background-color: #fefefe !important; font-size: 13px; color: #555; }
+    .empty-spacer-row td { background-color: #f0f2f5 !important; border: none !important; height: 18px; }
+    /* ➕ 新增結束 */
   </style>
 </head>
 <body>
@@ -99,6 +155,13 @@
   <!-- 3. 老師功能主選單 -->
   <div id="teacherDashboardSection" class="card hidden">
     <h3>老師功能選單</h3>
+
+    <!-- ➕ 新增：檢視班級成績區塊 -->
+    <div class="section-box">
+      <div class="section-title" style="border-left-color:#17a2b8;">檢視班級成績</div>
+      <div id="viewScoreClassBtns">載入中...</div>
+    </div>
+    <!-- ➕ 新增結束 -->
     
     <div class="section-box">
       <div class="section-title">成績登記</div>
@@ -407,15 +470,32 @@
       if (error) { alert('載入班級失敗：' + error.message); return; }
 
       const classes = [...new Set(data.map(item => item.class_name))];
+
+      // ➕ 新增成績檢視頁面：綁定 viewScoreClassBtns
+      const viewScoreContainer = document.getElementById('viewScoreClassBtns');
+      // ➕ 新增結束
+      
       const scoreContainer = document.getElementById('scoreClassBtns');
       const hwContainer = document.getElementById('hwClassBtns');
       const submitHwContainer = document.getElementById('submitHwClassBtns');
+
+      // ➕ 新增成績檢視頁面：
+      viewScoreContainer.innerHTML = '';
+      // ➕ 新增結束
       
       scoreContainer.innerHTML = '';
       hwContainer.innerHTML = '';
       submitHwContainer.innerHTML = '';
 
       classes.forEach(cls => {
+        // ➕ 新增：「檢視班級成績」按鈕
+        const btnViewScore = document.createElement('button');
+        btnViewScore.className = 'btn-class btn-class-view';
+        btnViewScore.innerText = `${cls} 班`;
+        btnViewScore.onclick = () => openViewScore(cls);
+        viewScoreContainer.appendChild(btnViewScore);
+        // ➕ 新增結束
+        
         const btnScore = document.createElement('button');
         btnScore.className = 'btn-class';
         btnScore.innerText = `${cls} 班`;
@@ -441,6 +521,134 @@
       });
     }
 
+    // ➕ 新增：開啟並載入「檢視班級成績」頁面
+    async function openViewScore(className) {
+      targetClass = className;
+      document.getElementById('teacherDashboardSection').classList.add('hidden');
+      document.getElementById('viewScoreSection').classList.remove('hidden');
+      document.getElementById('viewScoreClassTitle').innerText = `【${className} 班】班級成績總覽`;
+
+      const thead = document.getElementById('viewScoreHead');
+      const tbody = document.getElementById('viewScoreBody');
+      thead.innerHTML = '<tr><th class="sticky-col-1">座號</th><th class="sticky-col-2">姓名</th><th>載入中...</th></tr>';
+      tbody.innerHTML = '';
+
+      // 1. 抓取該班學生
+      const { data: students, error: sErr } = await supabaseClient
+        .from('students')
+        .select('*')
+        .eq('class_name', className)
+        .order('seat_num', { ascending: true });
+
+      if (sErr) { alert('載入學生失敗：' + sErr.message); return; }
+
+      const studentIds = students.map(s => s.student_id);
+
+      // 2. 抓取該班所有學生的成績
+      const { data: scores, error: scErr } = await supabaseClient
+        .from('scores')
+        .select('*')
+        .in('student_id', studentIds);
+
+      if (scErr) { alert('載入成績失敗：' + scErr.message); return; }
+
+      // 3. 整理出不重複的考試項目列表
+      const examTitles = [...new Set(scores.map(s => s.exam_title))];
+
+      // 渲染 表頭 (Header)
+      let headHtml = `<tr>
+        <th class="sticky-col-1">座號</th>
+        <th class="sticky-col-2">姓名</th>`;
+      examTitles.forEach(title => {
+        headHtml += `<th>${title}</th>`;
+      });
+      if (examTitles.length === 0) { headHtml += `<th>尚無考試紀錄</th>`; }
+      headHtml += `</tr>`;
+      thead.innerHTML = headHtml;
+
+      // 建立成績對照表: { student_id: { exam_title: score } }
+      const scoreMap = {};
+      scores.forEach(s => {
+        if (!scoreMap[s.student_id]) scoreMap[s.student_id] = {};
+        scoreMap[s.student_id][s.exam_title] = s.score;
+      });
+
+      // 渲染 學生名單與分數 (Body)
+      let bodyHtml = '';
+      students.forEach(s => {
+        bodyHtml += `<tr>
+          <td class="sticky-col-1">${s.seat_num}</td>
+          <td class="sticky-col-2">${s.name}</td>`;
+        
+        examTitles.forEach(title => {
+          const val = (scoreMap[s.student_id] && scoreMap[s.student_id][title] !== undefined)
+            ? scoreMap[s.student_id][title]
+            : '-';
+          bodyHtml += `<td>${val}</td>`;
+        });
+        if (examTitles.length === 0) { bodyHtml += `<td>-</td>`; }
+        bodyHtml += `</tr>`;
+      });
+
+      // ➕ 新增：最後一個孩子下方空一列
+      const colSpanTotal = Math.max(examTitles.length, 1) + 2;
+      bodyHtml += `<tr class="empty-spacer-row"><td colspan="${colSpanTotal}"></td></tr>`;
+
+      // ➕ 新增：計算各次考試的分數陣列
+      const examStats = {};
+      examTitles.forEach(t => examStats[t] = []);
+      scores.forEach(s => {
+        if (examStats[s.exam_title]) {
+          examStats[s.exam_title].push(s.score);
+        }
+      });
+
+      // 渲染 平均列
+      bodyHtml += `<tr class="stat-row-avg">
+        <td class="sticky-col-1">統計</td>
+        <td class="sticky-col-2">平均分數</td>`;
+      examTitles.forEach(t => {
+        const arr = examStats[t];
+        if (arr && arr.length > 0) {
+          const avg = (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1);
+          bodyHtml += `<td>${avg}</td>`;
+        } else {
+          bodyHtml += `<td>--</td>`;
+        }
+      });
+      if (examTitles.length === 0) { bodyHtml += `<td>--</td>`; }
+      bodyHtml += `</tr>`;
+
+      // 渲染 9 個級距人數列
+      const gradeRanges = [
+        { label: '100分', check: s => s === 100 },
+        { label: '90~99分', check: s => s >= 90 && s < 100 },
+        { label: '80~89分', check: s => s >= 80 && s < 90 },
+        { label: '70~79分', check: s => s >= 70 && s < 80 },
+        { label: '60~69分', check: s => s >= 60 && s < 70 },
+        { label: '50~59分', check: s => s >= 50 && s < 60 },
+        { label: '40~49分', check: s => s >= 40 && s < 50 },
+        { label: '30~39分', check: s => s >= 30 && s < 40 },
+        { label: '未滿30分', check: s => s < 30 }
+      ];
+
+      gradeRanges.forEach(gr => {
+        bodyHtml += `<tr class="stat-row-grade">
+          <td class="sticky-col-1">級距</td>
+          <td class="sticky-col-2">${gr.label}</td>`;
+        examTitles.forEach(t => {
+          const arr = examStats[t] || [];
+          const count = arr.filter(gr.check).length;
+          bodyHtml += `<td>${count} 人</td>`;
+        });
+        if (examTitles.length === 0) { bodyHtml += `<td>0 人</td>`; }
+        bodyHtml += `</tr>`;
+      });
+
+      tbody.innerHTML = bodyHtml;
+    }
+    //➕ 新增結束
+    
     // 選擇學生
     async function openStudentSelect(className) {
       targetClass = className;
@@ -689,6 +897,10 @@
     }
 
     function logout() {
+      // ➕ 新增：登出時隱藏檢視成績頁面
+      document.getElementById('viewScoreSection').classList.add('hidden');
+      // ➕ 新增結束
+      
       document.getElementById('studentDashboardSection').classList.add('hidden');
       document.getElementById('scoreEntrySection').classList.add('hidden');
       document.getElementById('homeworkSection').classList.add('hidden');
