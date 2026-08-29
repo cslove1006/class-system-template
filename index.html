@@ -103,6 +103,46 @@
       z-index: 20;
       background-color: #f8f9fa !important;
     }
+
+    /* 新增凍結頂端列 */
+    /* 1. 凍結表頭首列 (Top Header) */
+    .freeze-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 15; /* 層級需高於一般內容格子 */
+      background-color: #f8f9fa !important;
+      box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1); /* 增加底部陰影分界 */
+    }
+
+    /* 2. 左上角交叉點：同時固定在左側與頂部 (Top-Left Frozen Corner) */
+    th.sticky-col-1 {
+      position: sticky;
+      top: 0;
+      left: 0;
+      z-index: 30 !important; /* 最高層級，確保捲動時不被覆蓋 */
+      background-color: #f8f9fa !important;
+    }
+    
+    th.sticky-col-2 {
+      position: sticky;
+      top: 0;
+      left: 60px; /* 需搭配 sticky-col-1 的寬度 */
+      z-index: 30 !important; /* 最高層級 */
+      background-color: #f8f9fa !important;
+      border-right: 2px solid #007bff !important;
+    }
+
+    /* 3. 限制表格外框最大高度，使其出現垂直滾動條 */
+    .freeze-table-container {
+      overflow-x: auto;
+      overflow-y: auto;
+      max-width: 100%;
+      max-height: 70vh; /* 設定最大高度（例如螢幕高度的70%），超過就會出現垂直滾動條 */
+      border: 1px solid #e0e0e0;
+      position: relative;
+    }
+    /* 新增凍結頂端列結束 */
+    
     .stat-row-avg { background-color: #e8f4f8 !important; font-weight: bold; color: #007bff; }
     .stat-row-grade { background-color: #fefefe !important; font-size: 13px; color: #555; }
     .empty-spacer-row td { background-color: #f0f2f5 !important; border: none !important; height: 18px; }
