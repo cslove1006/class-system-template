@@ -201,9 +201,19 @@
     <h3>老師功能選單</h3>
 
     <!-- ➕ 新增：導出成績 excel 區塊 -->
-    <button class="submit-btn" style="background:#28a745; margin-bottom:15px;" onclick="exportAllClassesToExcel()">
-      📊 匯出全校/全班成績 Excel 檔
-    </button>
+    <div class="section-box">
+      <div class="section-title" style="border-left-color: #28a745;">📊 導出 Excel 檔</div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+        <!-- 按鈕 1：匯出成績檔 -->
+        <button class="btn-class btn-class-hw" style="flex: 1; min-width: 140px; padding: 10px; font-size: 15px;" onclick="exportAllClassesToExcel()">
+          📄 匯出成績檔
+        </button>
+        <!-- 按鈕 2：預留的匯出作業檔按鈕 -->
+        <button class="btn-class btn-class-submit" style="flex: 1; min-width: 140px; padding: 10px; font-size: 15px;" onclick="exportHomeworkToExcel()">
+          📝 匯出作業檔
+        </button>
+      </div>
+    </div>
     <!-- ➕ 新增結束 -->
 
     <!-- ➕ 新增：檢視班級成績區塊 -->
@@ -426,6 +436,12 @@
       XLSX.writeFile(wb, fileName);
     }
     //加入導出成績 excel 檔 結束
+
+    //加入導出作業 excel 檔
+    function exportHomeworkToExcel() {
+      alert('作業導出功能討論中，即將為您建置！');
+    }  
+    //加入導出作業 excel 結束
 
     //加入統計2/3
     // 📍【第二步開始】：定義計算成績平均與 9 個級距人數的 JS 核心處理邏輯
