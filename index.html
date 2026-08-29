@@ -438,8 +438,107 @@
     //加入導出成績 excel 檔 結束
 
     //加入導出作業 excel 檔
-    function exportHomeworkToExcel() {
-      alert('作業導出功能討論中，即將為您建置！');
+    async function exportHomeworkToExcel() {
+      alert('正在準備匯出作業紀錄，請稍候...');
+
+      // 1. 從 Supabase 撈取學生與作業未檢查紀錄
+      const { data: students, error: sErr } = await supabaseClient
+        .from('students')
+        .select('*')
+        .order('seat_num', { ascending: true });
+
+      const { data: hwList, error: hErr } = await supabaseClient
+        .from('missing_homework')
+        .select('*')
+        .order('homework_date', { ascending: true });
+
+      if (sErr || hErr) {
+        alert('讀取資料失敗：' + (sErr?.message || hErr?.message));
+        return;
+      }
+
+      // 2. 建立 Excel 工作簿 (Workbook)
+      const wb = XLSX.utils.book_new();
+
+      // 3. 按班級分組學生
+      const classMap = {};
+      students.forEach(s => {
+        if (!classMap[s.class_name]) classMap[s.class_name] = [];
+        classMap[s.class_name].push(s);
+      });
+
+      // 4. 針對每個班級製作獨立的工作表
+      Object.keys(classMap).forEach(className => {
+        const classStudents = classMap[className];
+        const studentIds = classStudents.map(s => s.student_id);
+    
+        // 篩選出屬於該班級學生的作業紀錄
+        const classHw = hwList.filter(h => studentIds.includes(h.student_id));
+
+        // 提取該班級不重複的作業項目 (以「日期 + 作業名稱」作為唯一辨識)
+        const uniqueHwMap = new Map();
+        classHw.forEach(h => {
+          const key = `${h.homework_date}_${h.homework_title}`;
+          if (!uniqueHwMap.has(key)) {
+            uniqueHwMap.set(key, {
+              date: h.homework_date || '-',
+              title: h.homework_title || '-'
+            });
+          }
+        });
+
+        const uniqueHwList = Array.from(uniqueHwMap.values());
+
+        // 建立第 1 列：作業日期
+        const row1 = ['座號', '姓名'];
+        uniqueHwList.forEach(hw => row1.push(hw.date));
+
+        // 建立第 2 列：作業內容
+        const row2 = ['', ''];
+        uniqueHwList.forEach(hw => row2.push(hw.title));
+
+        const sheetData = [row1, row2];
+
+        // 整理作業狀態對照表：scoreMap[student_id][homework_key] = statusText
+        const statusMap = {};
+        classHw.forEach(h => {
+          if (!statusMap[h.student_id]) statusMap[h.student_id] = {};
+          const key = `${h.homework_date}_${h.homework_title}`;
+      
+          // 判斷狀態文字
+          let statusText = '';
+          if (h.status === '未檢查') {
+            statusText = '缺交';
+          } else if (h.status === '已補檢') {
+            statusText = '補交';
+          } else {
+            statusText = h.status || '';
+          }
+      
+          statusMap[h.student_id][key] = statusText;
+        });
+
+        // 填寫第 3 列起的學生狀態資料
+        classStudents.forEach(s => {
+          const row = [s.seat_num, s.name];
+          uniqueHwList.forEach(hw => {
+            const key = `${hw.date}_${hw.title}`;
+            const statusVal = (statusMap[s.student_id] && statusMap[s.student_id][key])
+              ? statusMap[s.student_id][key]
+              : ''; // 完全無紀錄則保持空白
+            row.push(statusVal);
+          });
+          sheetData.push(row);
+        });
+
+        // 轉為 Sheet 並寫入工作簿
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+        XLSX.utils.book_append_sheet(wb, ws, `${className}班`);
+      });
+
+      // 5. 下載檔案
+      const fileName = `班級作業紀錄總覽_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
     }  
     //加入導出作業 excel 結束
 
