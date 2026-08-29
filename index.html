@@ -293,6 +293,17 @@
     let targetClass = '';
     let currentStudentObj = null;
 
+    function hideAllSections() {
+      document.getElementById('loginSection').classList.add('hidden');
+      document.getElementById('studentDashboardSection').classList.add('hidden');
+      document.getElementById('teacherDashboardSection').classList.add('hidden');
+      document.getElementById('viewScoreSection').classList.add('hidden');
+      document.getElementById('studentSelectSection').classList.add('hidden');
+      document.getElementById('studentHwManageSection').classList.add('hidden');
+      document.getElementById('scoreEntrySection').classList.add('hidden');
+      document.getElementById('homeworkSection').classList.add('hidden');
+    }
+
     //加入統計2/3
     // 📍【第二步開始】：定義計算成績平均與 9 個級距人數的 JS 核心處理邏輯
     function calculateScoreStats(scoresArray) {
@@ -416,6 +427,7 @@
 
     // 學生個人查詢 (包含日期顯示 & 移除成績及格狀態)
     async function loadStudentDashboard(student) {
+      hideAllSections();
       document.getElementById('studentDashboardSection').classList.remove('hidden');
       document.getElementById('studentWelcomeTitle').innerText = `你好，${student.name} 同學！`;
       document.getElementById('studentInfoSub').innerText = `班級：${student.class_name} 班 | 座號：${student.seat_num} 號 | 學號：${student.student_id}`;
@@ -479,6 +491,7 @@
 
     // 初始化老師主選單
     async function initTeacherDashboard() {
+      hideAllSections();
       document.getElementById('teacherDashboardSection').classList.remove('hidden');
       const { data, error } = await supabaseClient.from('students').select('class_name');
       if (error) { alert('載入班級失敗：' + error.message); return; }
@@ -538,6 +551,7 @@
     // ➕ 新增：開啟並載入「檢視班級成績」頁面
     async function openViewScore(className) {
       targetClass = className;
+      hideAllSections();
       document.getElementById('teacherDashboardSection').classList.add('hidden');
       document.getElementById('viewScoreSection').classList.remove('hidden');
       document.getElementById('viewScoreClassTitle').innerText = `【${className} 班】班級成績總覽`;
@@ -666,6 +680,7 @@
     // 選擇學生
     async function openStudentSelect(className) {
       targetClass = className;
+      hideAllSections();
       document.getElementById('teacherDashboardSection').classList.add('hidden');
       document.getElementById('studentSelectSection').classList.remove('hidden');
       document.getElementById('selectStudentClassTitle').innerText = `【${className} 班】選擇學生`;
@@ -694,6 +709,7 @@
     // 開啟學生作業管理頁面
     async function openStudentHwManage(student) {
       currentStudentObj = student;
+      hideAllSections();
       document.getElementById('studentSelectSection').classList.add('hidden');
       document.getElementById('studentHwManageSection').classList.remove('hidden');
       document.getElementById('targetStudentNameTitle').innerText = `【${student.class_name}班 ${student.seat_num}號 ${student.name}】作業狀態`;
@@ -760,15 +776,17 @@
 
     // 返回功能
     function backToStudentSelect() {
-      document.getElementById('studentHwManageSection').classList.add('hidden');
+      //document.getElementById('studentHwManageSection').classList.add('hidden');
+      hideAllSections();
       document.getElementById('studentSelectSection').classList.remove('hidden');
     }
 
     function backToTeacherDashboard() {
-      document.getElementById('scoreEntrySection').classList.add('hidden');
-      document.getElementById('homeworkSection').classList.add('hidden');
-      document.getElementById('studentSelectSection').classList.add('hidden');
-      document.getElementById('studentHwManageSection').classList.add('hidden');
+      //document.getElementById('scoreEntrySection').classList.add('hidden');
+      //document.getElementById('homeworkSection').classList.add('hidden');
+      //document.getElementById('studentSelectSection').classList.add('hidden');
+      //document.getElementById('studentHwManageSection').classList.add('hidden');
+      hideAllSections();
       document.getElementById('teacherDashboardSection').classList.remove('hidden');
     }
 
@@ -836,7 +854,8 @@
     // 成績登記相關
     async function openScoreEntry(className) {
       targetClass = className;
-      document.getElementById('teacherDashboardSection').classList.add('hidden');
+      hideAllSections();
+      //document.getElementById('teacherDashboardSection').classList.add('hidden');
       document.getElementById('scoreEntrySection').classList.remove('hidden');
       document.getElementById('scoreClassTitle').innerText = `【${className} 班】成績登記`;
       document.getElementById('examTitle').value = '';
@@ -915,12 +934,13 @@
       document.getElementById('viewScoreSection').classList.add('hidden');
       // ➕ 新增結束
       
-      document.getElementById('studentDashboardSection').classList.add('hidden');
-      document.getElementById('scoreEntrySection').classList.add('hidden');
-      document.getElementById('homeworkSection').classList.add('hidden');
-      document.getElementById('studentSelectSection').classList.add('hidden');
-      document.getElementById('studentHwManageSection').classList.add('hidden');
-      document.getElementById('teacherDashboardSection').classList.add('hidden');
+      //document.getElementById('studentDashboardSection').classList.add('hidden');
+      //document.getElementById('scoreEntrySection').classList.add('hidden');
+      //document.getElementById('homeworkSection').classList.add('hidden');
+      //document.getElementById('studentSelectSection').classList.add('hidden');
+      //document.getElementById('studentHwManageSection').classList.add('hidden');
+      //document.getElementById('teacherDashboardSection').classList.add('hidden');
+      hideAllSections();
       document.getElementById('loginSection').classList.remove('hidden');
       document.getElementById('accountInput').value = '';
       document.getElementById('passwordInput').value = '';
