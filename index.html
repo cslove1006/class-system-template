@@ -5,9 +5,9 @@
   <title>班級管理系統</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  /* 加入導出 excel 檔案 */
+  <-- 加入導出 excel 檔案 -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  /* 加入結束 */
+  <-- 加入結束 -->
   
   <script>
     const SUPABASE_URL = 'https://xkfcggsgvncljsbifbna.supabase.co';
@@ -205,12 +205,12 @@
       <div class="section-title" style="border-left-color: #28a745;">📊 導出 Excel 檔</div>
       <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
         <!-- 按鈕 1：匯出成績檔 -->
-        <button class="btn-class btn-class-hw" style="flex: 1; min-width: 140px; padding: 10px; font-size: 15px;" onclick="exportAllClassesToExcel()">
-          📄 匯出成績檔
+        <button class="btn-class btn-class-hw" onclick="exportAllClassesToExcel()">
+          📄 成績
         </button>
         <!-- 按鈕 2：預留的匯出作業檔按鈕 -->
-        <button class="btn-class btn-class-submit" style="flex: 1; min-width: 140px; padding: 10px; font-size: 15px;" onclick="exportHomeworkToExcel()">
-          📝 匯出作業檔
+        <button class="btn-class btn-class-submit" onclick="exportHomeworkToExcel()">
+          📝 作業
         </button>
       </div>
     </div>
