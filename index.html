@@ -172,6 +172,12 @@
       <div class="form-group">
         <label>密碼</label>
         <input type="password" id="passwordInput" placeholder="請輸入密碼" required>
+
+        <!-- 🟢 新增：學生密碼提示文字 -->
+        <small id="studentPwdHint" style="color: #6c757d; font-size: 13px; display: block; margin-top: 6px;">
+          💡 提示：密碼為班級 3 碼 + 學號後 3 碼，共 6 碼（例如：101001）
+        </small>
+        
       </div>
       <button type="submit" class="submit-btn">登入系統</button>
       <div id="errorMsg" class="error-msg"></div>
