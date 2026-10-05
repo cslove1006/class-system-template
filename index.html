@@ -93,20 +93,28 @@
     }
     .freeze-table th { background-color: #f8f9fa; }
 
-    /* 固定座號（第一欄） */
+    /* 固定學號（第一欄） */
     .sticky-col-1 {
       position: sticky;
       left: 0;
       z-index: 10;
+      min-width: 100px;
+      background-color: #fff !important;
+    }
+    /* 固定座號（第二欄） */
+    .sticky-col-2 {
+      position: sticky;
+      left: 100px;
+      z-index: 10;
       min-width: 60px;
       background-color: #fff !important;
     }
-    /* 固定姓名（第二欄） */
-    .sticky-col-2 {
+    /* 固定姓名（第三欄，left 為 100px + 60px = 160px） */
+    .sticky-col-3 {
       position: sticky;
-      left: 60px;
+      left: 160px;
       z-index: 10;
-      min-width: 100px;
+      min-width: 90px;
       border-right: 2px solid #007bff !important;
       background-color: #fff !important;
     }
@@ -151,8 +159,16 @@
     th.sticky-col-2 {
       position: sticky;
       top: 0;
-      left: 60px; /* 需搭配 sticky-col-1 的寬度 */
+      left: 100px; /* 需搭配 sticky-col-1 的寬度 */
       z-index: 30 !important; /* 最高層級 */
+      background-color: #f8f9fa !important;
+    }
+    
+    th.sticky-col-3 {
+      position: sticky;
+      top: 0;
+      left: 160px;
+      z-index: 30 !important;
       background-color: #f8f9fa !important;
       border-right: 2px solid #007bff !important;
     }
@@ -1012,7 +1028,7 @@
 
       const thead = document.getElementById('viewHwHead');
       const tbody = document.getElementById('viewHwBody');
-      thead.innerHTML = '<tr><th class="sticky-col-1">座號</th><th class="sticky-col-2">姓名</th><th>載入中...</th></tr>';
+      thead.innerHTML = '<tr><th class="sticky-col-1">學號</th><th class="sticky-col-2">座號</th><th class="sticky-col-3">姓名</th><th>載入中...</th></tr>';
       tbody.innerHTML = '';
 
       // 1. 取得學生資料
@@ -1051,8 +1067,9 @@
 
       // 4. 渲染表頭 (第一列：作業項目)
       let headHtml = `<tr>
-        <th class="sticky-col-1">座號</th>
-        <th class="sticky-col-2">姓名</th>`;
+        <th class="sticky-col-1">學號</th>
+        <th class="sticky-col-2">座號</th>
+        <th class="sticky-col-3">姓名</th>`;
       uniqueHwList.forEach(hw => {
         headHtml += `<th>${hw.date}<br>${hw.title}</th>`;
       });
@@ -1082,8 +1099,9 @@
       let bodyHtml = '';
       students.forEach(s => {
         bodyHtml += `<tr>
-          <td class="sticky-col-1">${s.seat_num}</td>
-          <td class="sticky-col-2">${s.name}</td>`;
+          <td class="sticky-col-1">${s.student_id}</td>
+          <td class="sticky-col-2">${s.seat_num}</td>
+          <td class="sticky-col-3">${s.name}</td>`;
 
         uniqueHwList.forEach(hw => {
           const key = `${hw.date}_${hw.title}`;
