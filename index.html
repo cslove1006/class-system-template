@@ -652,24 +652,32 @@
 
     function switchRole(role) {
       currentRole = role;
-      document.getElementById('btnStudent').classList.remove('active');
-      document.getElementById('btnAssistant').classList.remove('active');
-      document.getElementById('btnTeacher').classList.remove('active');
+      
+      const btnStudent = document.getElementById('btnStudent');
+      const btnTeacher = document.getElementById('btnTeacher');
+      //const btnAssistant = document.getElementById('btnAssistant');
+
+      if (btnStudent) btnStudent.classList.remove('active');
+      if (btnTeacher) btnTeacher.classList.remove('active');
+      //if (btnAssistant) btnAssistant.classList.remove('active');
+      
       document.getElementById('errorMsg').innerText = '';
       
       const accountLabel = document.getElementById('accountLabel');
       const accountInput = document.getElementById('accountInput');
 
       if (role === 'student') {
-        document.getElementById('btnStudent').classList.add('active');
+        if (btnStudent) btnStudent.classList.add('active');
+        //document.getElementById('btnStudent').classList.add('active');
         accountLabel.innerText = '學號';
         accountInput.placeholder = '請輸入學號';
-      } else if (role === 'assistant') {
-        document.getElementById('btnAssistant').classList.add('active');
-        accountLabel.innerText = '小老師帳號';
-        accountInput.placeholder = '請輸入小老師帳號';
+      //} else if (role === 'assistant') {
+        //document.getElementById('btnAssistant').classList.add('active');
+        //accountLabel.innerText = '小老師帳號';
+        //accountInput.placeholder = '請輸入小老師帳號';
       } else if (role === 'teacher') {
-        document.getElementById('btnTeacher').classList.add('active');
+        if (btnTeacher) btnTeacher.classList.add('active');  
+        //document.getElementById('btnTeacher').classList.add('active');
         accountLabel.innerText = '老師帳號';
         accountInput.placeholder = '請輸入老師帳號';
       }
