@@ -428,6 +428,18 @@
     let targetClass = '';
     let currentStudentObj = null;
 
+    // 🆕 新增：按下 Enter 自動跳到下一個座號輸入格
+    function handleScoreKeyDown(event, currentIndex) {
+      if (event.key === 'Enter') {
+        event.preventDefault(); // 阻止按下 Enter 的預設行為
+        const scoreInputs = document.querySelectorAll('.score-field');
+        if (currentIndex + 1 < scoreInputs.length) {
+          scoreInputs[currentIndex + 1].focus();
+          scoreInputs[currentIndex + 1].select(); // 自動全選下一格內容，方便連續輸入
+        }
+      }
+    }
+
     function hideAllSections() {
       document.getElementById('loginSection').classList.add('hidden');
       document.getElementById('studentDashboardSection').classList.add('hidden');
@@ -1317,12 +1329,12 @@
       if (error) { alert('載入名單失敗：' + error.message); return; }
 
       tbody.innerHTML = '';
-      students.forEach(s => {
+      students.forEach((s, index) => {
         tbody.innerHTML += `
           <tr>
             <td>${s.seat_num}</td>
             <td>${s.name}</td>
-            <td><input type="number" class="input-score score-field" data-id="${s.student_id}" placeholder="分數" min="0" max="100"></td>
+            <td><input type="number" class="input-score score-field" data-id="${s.student_id}" placeholder="分數" min="0" max="100" onkeydown="handleScoreKeyDown(event, ${index})"></td>
           </tr>
         `;
       });
