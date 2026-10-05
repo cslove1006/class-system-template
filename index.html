@@ -50,6 +50,10 @@
     /* ➕ 新增：檢視成績按鈕樣式 */
     button.btn-class-view { background: #17a2b8; }
     /* ➕ 新增結束 */
+
+    /* ➕ 新增：檢視作業按鈕樣式 * (我猜的)/
+    button.btn-class-hw-view { background: #20c997; }
+    /* ➕ 新增結束 */
     
     button.btn-student { background: #6c757d; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 4px; }
     button.btn-class:hover, button.btn-student:hover { opacity: 0.85; }
@@ -69,7 +73,9 @@
     /* ➕ 新增：凍結窗格（左側固定、右側滑動）表格樣式 */
     .freeze-table-container {
       overflow-x: auto;
+      overflow-y: auto; /* 作業檢視新增 */
       max-width: 100%;
+      max-height: 70vh; /* 作業檢視新增 */
       border: 1px solid #e0e0e0;
       position: relative;
     }
@@ -86,6 +92,7 @@
       background-color: #fff;
     }
     .freeze-table th { background-color: #f8f9fa; }
+
     /* 固定座號（第一欄） */
     .sticky-col-1 {
       position: sticky;
@@ -103,10 +110,24 @@
       border-right: 2px solid #007bff !important;
       background-color: #fff !important;
     }
-    th.sticky-col-1, th.sticky-col-2 {
-      z-index: 20;
+    /* 作業檢視修改處
+    th.sticky-col-1 {
+      position: sticky;
+      top: 0;
+      left: 0;
+      z-index: 30 !important;
+      //z-index: 20;
       background-color: #f8f9fa !important;
     }
+    th.sticky-col-2{
+      position: sticky;
+      top: 0;
+      left: 60px;
+      z-index: 30 !important;
+      background-color: #f8f9fa !important;
+      border-right: 2px solid #007bff !important;
+    }
+    作業檢視修改完畢 感覺這段全部都要拿掉*/
 
     /* 新增凍結頂端列 */
     /* 1. 凍結表頭首列 (Top Header) */
@@ -151,6 +172,10 @@
     .stat-row-grade { background-color: #fefefe !important; font-size: 13px; color: #555; }
     .empty-spacer-row td { background-color: #f0f2f5 !important; border: none !important; height: 18px; }
     /* ➕ 新增結束 */
+
+    .cell-missing { color: #dc3545; font-weight: bold; font-size: 16px; }
+    .cell-makeup { color: #28a745; font-weight: bold; font-size: 16px; }
+    
   </style>
 </head>
 <body>
@@ -232,6 +257,13 @@
       <div id="viewScoreClassBtns">載入中...</div>
     </div>
     <!-- ➕ 新增結束 -->
+
+    <!-- 🆕 新增：檢視作業紀錄 (矩陣總覽) -->
+    <div class="section-box">
+      <div class="section-title" style="border-left-color:#20c997;">檢視作業紀錄 (矩陣表)</div>
+      <div id="viewHwClassBtns">載入中...</div>
+    </div>
+    <!-- ➕ 新增結束 -->
     
     <div class="section-box">
       <div class="section-title">成績登記</div>
@@ -263,6 +295,23 @@
       </table>
     </div>
   </div>
+  <!-- ➕ 新增結束 -->
+
+  <!-- 🆕 新增：檢視班級作業矩陣頁面 -->
+  <div id="viewHwSection" class="card card-wide hidden">
+    <button class="btn-back" onclick="backToTeacherDashboard()">← 返回選單</button>
+    <h3 id="viewHwClassTitle">班級作業紀錄總覽</h3>
+    <p style="font-size:14px; color:#666; margin-top:-5px; margin-bottom:15px;">
+      標示說明：<span class="cell-missing">缺</span> 代表缺交（未檢查）｜ <span class="cell-makeup">補</span> 代表已補檢 ｜ 空格代表正常繳交無缺交紀錄
+    </p>
+    
+    <div class="freeze-table-container">
+      <table class="freeze-table">
+        <thead id="viewHwHead"></thead>
+        <tbody id="viewHwBody"></tbody>
+      </table>
+    </div>
+  </div> 
   <!-- ➕ 新增結束 -->
 
   <!-- 4. 補檢處理：學生名單選單頁面 -->
@@ -368,6 +417,10 @@
       document.getElementById('studentDashboardSection').classList.add('hidden');
       document.getElementById('teacherDashboardSection').classList.add('hidden');
       document.getElementById('viewScoreSection').classList.add('hidden');
+
+      //作業檢視
+      document.getElementById('viewHwSection').classList.add('hidden');
+      
       document.getElementById('studentSelectSection').classList.add('hidden');
       document.getElementById('studentHwManageSection').classList.add('hidden');
       document.getElementById('scoreEntrySection').classList.add('hidden');
@@ -749,6 +802,10 @@
       // ➕ 新增成績檢視頁面：綁定 viewScoreClassBtns
       const viewScoreContainer = document.getElementById('viewScoreClassBtns');
       // ➕ 新增結束
+
+      // ➕ 新增作業檢視頁面：
+      const viewHwContainer = document.getElementById('viewHwClassBtns');
+      // ➕ 新增結束
       
       const scoreContainer = document.getElementById('scoreClassBtns');
       const hwContainer = document.getElementById('hwClassBtns');
@@ -756,6 +813,10 @@
 
       // ➕ 新增成績檢視頁面：
       viewScoreContainer.innerHTML = '';
+      // ➕ 新增結束
+
+       // ➕ 新增作業檢視頁面：
+      viewHwContainer.innerHTML = '';
       // ➕ 新增結束
       
       scoreContainer.innerHTML = '';
@@ -769,6 +830,14 @@
         btnViewScore.innerText = `${cls} 班`;
         btnViewScore.onclick = () => openViewScore(cls);
         viewScoreContainer.appendChild(btnViewScore);
+        // ➕ 新增結束
+
+        // 🆕「檢視作業紀錄 (矩陣表)」按鈕
+        const btnViewHw = document.createElement('button');
+        btnViewHw.className = 'btn-class btn-class-hw-view';
+        btnViewHw.innerText = `${cls} 班`;
+        btnViewHw.onclick = () => openViewHwMatrix(cls);
+        viewHwContainer.appendChild(btnViewHw);
         // ➕ 新增結束
         
         const btnScore = document.createElement('button');
@@ -918,6 +987,104 @@
           bodyHtml += `<td>${count} 人</td>`;
         });
         if (examTitles.length === 0) { bodyHtml += `<td>0 人</td>`; }
+        bodyHtml += `</tr>`;
+      });
+
+      tbody.innerHTML = bodyHtml;
+    }
+    //➕ 新增結束
+
+    // 🆕 新增：開啟並載入「檢視作業紀錄 (矩陣表)」頁面
+    async function openViewHwMatrix(className) {
+      targetClass = className;
+      hideAllSections();
+      document.getElementById('teacherDashboardSection').classList.add('hidden');
+      document.getElementById('viewHwSection').classList.remove('hidden');
+      document.getElementById('viewHwClassTitle').innerText = `【${className} 班】作業未檢查與補檢總覽`;
+
+      const thead = document.getElementById('viewHwHead');
+      const tbody = document.getElementById('viewHwBody');
+      thead.innerHTML = '<tr><th class="sticky-col-1">座號</th><th class="sticky-col-2">姓名</th><th>載入中...</th></tr>';
+      tbody.innerHTML = '';
+
+      // 1. 取得學生資料
+      const { data: students, error: sErr } = await supabaseClient
+        .from('students')
+        .select('*')
+        .eq('class_name', className)
+        .order('seat_num', { ascending: true });
+
+      if (sErr) { alert('載入學生失敗：' + sErr.message); return; }
+
+      const studentIds = students.map(s => s.student_id);
+
+      // 2. 取得該班學生的 missing_homework 資料
+      const { data: hwList, error: hErr } = await supabaseClient
+        .from('missing_homework')
+        .select('*')
+        .in('student_id', studentIds)
+        .order('homework_date', { ascending: true });
+
+      if (hErr) { alert('載入作業紀錄失敗：' + hErr.message); return; }
+
+      // 3. 提取該班級不重複的作業項目 (日期 + 作業名稱)
+      const uniqueHwMap = new Map();
+      hwList.forEach(h => {
+        const key = `${h.homework_date}_${h.homework_title}`;
+        if (!uniqueHwMap.has(key)) {
+          uniqueHwMap.set(key, {
+            date: h.homework_date || '-',
+            title: h.homework_title || '-'
+          });
+        }
+      });
+
+      const uniqueHwList = Array.from(uniqueHwMap.values());
+
+      // 4. 渲染表頭 (第一列：作業項目)
+      let headHtml = `<tr>
+        <th class="sticky-col-1">座號</th>
+        <th class="sticky-col-2">姓名</th>`;
+      uniqueHwList.forEach(hw => {
+        headHtml += `<th>${hw.date}<br>${hw.title}</th>`;
+      });
+      if (uniqueHwList.length === 0) { headHtml += `<th>尚無作業紀錄</th>`; }
+      headHtml += `</tr>`;
+      thead.innerHTML = headHtml;
+
+      // 5. 整理狀態 Map: statusMap[student_id][homework_key] = '缺' / '補' / ''
+      const statusMap = {};
+      hwList.forEach(h => {
+        if (!statusMap[h.student_id]) statusMap[h.student_id] = {};
+        const key = `${h.homework_date}_${h.homework_title}`;
+
+        let symbol = '';
+        if (h.status === '未檢查') {
+          symbol = '<span class="cell-missing">缺</span>';
+        } else if (h.status === '已補檢') {
+          symbol = '<span class="cell-makeup">補</span>';
+        } else {
+          symbol = h.status || '';
+        }
+
+        statusMap[h.student_id][key] = symbol;
+      });
+
+      // 6. 渲染表格內容 (第一欄：學生)
+      let bodyHtml = '';
+      students.forEach(s => {
+        bodyHtml += `<tr>
+          <td class="sticky-col-1">${s.seat_num}</td>
+          <td class="sticky-col-2">${s.name}</td>`;
+
+        uniqueHwList.forEach(hw => {
+          const key = `${hw.date}_${hw.title}`;
+          const val = (statusMap[s.student_id] && statusMap[s.student_id][key])
+            ? statusMap[s.student_id][key]
+            : ''; // 無缺交紀錄呈現空格
+          bodyHtml += `<td>${val}</td>`;
+        });
+        if (uniqueHwList.length === 0) { bodyHtml += `<td></td>`; }
         bodyHtml += `</tr>`;
       });
 
@@ -1180,6 +1347,10 @@
     function logout() {
       // ➕ 新增：登出時隱藏檢視成績頁面
       document.getElementById('viewScoreSection').classList.add('hidden');
+      // ➕ 新增結束
+
+      // ➕ 新增：登出時隱藏檢視成績頁面
+      document.getElementById('viewHwSection').classList.add('hidden');
       // ➕ 新增結束
       
       //document.getElementById('studentDashboardSection').classList.add('hidden');
